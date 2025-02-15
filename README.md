@@ -104,9 +104,9 @@ WHERE Position = 'PG';
 -Click Run
 -You should see an output if you scroll down under "Query Results"
 
-### **What We Learned**
-1. Securing AWS services with least privilege IAM policies.
-2. Automating the creation of services with a script.
+### **What I Learned**
+1. To secure AWS services with least privilege IAM policies.
+2. How to automate the creation of services with a script.
 3. Integrating external APIs into cloud-based workflows.
 
 
