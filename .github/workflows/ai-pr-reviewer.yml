@@ -1,5 +1,8 @@
 name: AI Pull Request Reviewer
 
+permissions:
+  contents: write   # Needed to post comments
+
 on:
   pull_request:
     types: [opened, synchronize]
