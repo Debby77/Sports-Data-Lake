@@ -1,7 +1,8 @@
 name: AI Pull Request Reviewer
 
 on:
-  pull_request:
+  workflow_dispatch:        # Allows manual run
+  pull_request:            # Also triggers on PRs
     types: [opened, synchronize]
 
 jobs:
@@ -9,9 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Get PR diff
+        if: github.event_name == 'pull_request'
         id: diff
         run: |
           git fetch origin ${{ github.base_ref }}
@@ -20,6 +23,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Call OpenAI for Review
+        if: github.event_name == 'pull_request'
         id: ai
         run: |
           RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
@@ -35,10 +39,15 @@ jobs:
           )
           echo "REVIEW=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')" >> $GITHUB_OUTPUT
 
-      - name: Post Review as Comment
+      - name: Post AI Review Comment
+        if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           message: |
             🤖 **AI Code Review**
             ---
             ${{ steps.ai.outputs.REVIEW }}
+
+      - name: Manual Run Demo
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Workflow triggered manually. PR comment feature works on pull requests."
