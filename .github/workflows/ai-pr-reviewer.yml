@@ -1,0 +1,44 @@
+name: AI Pull Request Reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          echo "DIFF<<EOF" >> $GITHUB_OUTPUT
+          git diff origin/${{ github.base_ref }}..HEAD >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Call OpenAI for Review
+        id: ai
+        run: |
+          RESPONSE=$(curl https://api.openai.com/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+            -d '{
+              "model": "gpt-4.1-mini",
+              "messages": [
+                {"role": "system", "content": "You are a senior software engineer. Review the following PR diff for bugs, issues, and suggestions."},
+                {"role": "user", "content": "Review this diff:\n${{ steps.diff.outputs.DIFF }}"}
+              ]
+            }'
+          )
+          echo "REVIEW=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')" >> $GITHUB_OUTPUT
+
+      - name: Post Review as Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            🤖 **AI Code Review**
+            ---
+            ${{ steps.ai.outputs.REVIEW }}
